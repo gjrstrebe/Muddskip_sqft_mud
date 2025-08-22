@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Muddskip Profit Calculator</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN for the visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            color: #1f2937;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-4">
+
+    <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl p-8 my-8 border border-gray-200">
+        <!-- Header Section -->
+        <header class="text-center mb-6">
+            <h1 class="text-4xl sm:text-5xl font-bold text-gray-800 mb-2">Muddskip Profit Calculator</h1>
+            <p class="text-lg sm:text-xl text-gray-500">See how saving time can increase your earnings.</p>
+        </header>
+        
+        <!-- Explanation Section -->
+        <div class="bg-blue-50 border-l-4 border-blue-500 text-blue-800 p-4 mb-8 rounded-lg" role="alert">
+            <h3 class="font-semibold text-lg mb-1">How it Works:</h3>
+            <p class="text-sm sm:text-base">
+                Traditionally, drywall finishing requires significant waiting time between coats for the mud to dry, leading to unproductive time and impacting employee utilization. With Muddskip, you can complete multiple coats in a single day, which eliminates this wait time.
+            </p>
+            <p class="text-sm sm:text-base mt-2">
+                This dramatic improvement in employee utilization is why we can claim a **2x increase in productivity**, allowing you to complete twice the number of boards in the same amount of time and leading to significantly higher daily earnings.
+            </p>
+        </div>
+
+        <!-- New Component: Factors Impacting Utilization -->
+        <div class="bg-red-50 border-l-4 border-red-500 text-red-800 p-4 mb-8 rounded-lg" role="alert">
+            <h3 class="font-semibold text-lg mb-2">Factors That Negatively Impact Utilization:</h3>
+            <ul class="list-disc list-inside text-sm sm:text-base space-y-1">
+                <li>Waiting for mud to dry between coats.</li>
+                <li>Drive time to and from job sites.</li>
+                <li>Project setup and teardown time.</li>
+                <li>Time spent on material runs.</li>
+                <li>Equipment cleaning and maintenance.</li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Input Section -->
+            <div class="bg-gray-50 p-6 rounded-xl shadow-inner border border-gray-100">
+                <h2 class="text-2xl font-semibold text-gray-700 mb-4">Input Your Values</h2>
+                
+                <div class="mb-5">
+                    <label for="boards_per_day" class="block text-sm font-medium text-gray-600 mb-2">Boards Completed Per Day (Without Muddskip)</label>
+                    <input type="number" id="boards_per_day" value="100" class="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-blue-500 transition-colors duration-200">
+                </div>
+
+                <div class="mb-5">
+                    <label for="current_pay" class="block text-sm font-medium text-gray-600 mb-2">Current Pay Per Board ($)</label>
+                    <input type="number" id="current_pay" value="5.50" step="0.01" class="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-blue-500 transition-colors duration-200">
+                </div>
+
+                <div class="mb-5">
+                    <label for="new_pay" class="block text-sm font-medium text-gray-600 mb-2">New Pay Per Board With Muddskip ($)</label>
+                    <input type="number" id="new_pay" value="3.50" step="0.01" class="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-blue-500 transition-colors duration-200">
+                </div>
+                
+                <p class="text-center text-sm text-gray-400 mt-2">Note: This calculator assumes a 50% time savings, which doubles the number of boards completed per day.</p>
+            </div>
+
+            <!-- Results Section -->
+            <div class="bg-gray-50 p-6 rounded-xl shadow-inner border border-gray-100 flex flex-col justify-between">
+                <div>
+                    <h2 class="text-2xl font-semibold text-gray-700 mb-4">Daily Earnings Summary</h2>
+                    <div class="space-y-4 text-center">
+                        <div class="bg-blue-50 p-4 rounded-xl">
+                            <p class="text-base text-gray-500">Your Current Daily Earnings:</p>
+                            <p id="current-earnings" class="text-3xl font-bold text-blue-600">$550.00</p>
+                        </div>
+                        <div class="bg-green-50 p-4 rounded-xl">
+                            <p class="text-base text-gray-500">Your Daily Earnings with Muddskip:</p>
+                            <p id="new-earnings" class="text-3xl font-bold text-green-600">$700.00</p>
+                        </div>
+                    </div>
+
+                    <!-- Visualization -->
+                    <div class="mt-8">
+                        <canvas id="earnings-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer / Call to action -->
+        <footer class="mt-8 text-center text-gray-500">
+            <p>Ready to see the difference for yourself?</p>
+        </footer>
+    </div>
+
+    <script>
+        // Get input elements
+        const boardsInput = document.getElementById('boards_per_day');
+        const currentPayInput = document.getElementById('current_pay');
+        const newPayInput = document.getElementById('new_pay');
+        
+        // Get display elements
+        const currentEarningsDisplay = document.getElementById('current-earnings');
+        const newEarningsDisplay = document.getElementById('new-earnings');
+
+        let myChart;
+
+        // Function to perform the calculation and update the UI
+        function updateCalculator() {
+            const boardsPerDay = parseFloat(boardsInput.value) || 0;
+            const currentPay = parseFloat(currentPayInput.value) || 0;
+            const newPay = parseFloat(newPayInput.value) || 0;
+
+            const currentDailyEarnings = boardsPerDay * currentPay;
+            // Assuming 50% time saving means completing twice the boards in the same time
+            const newDailyEarnings = (boardsPerDay * 2) * newPay;
+
+            currentEarningsDisplay.textContent = `$${currentDailyEarnings.toFixed(2)}`;
+            newEarningsDisplay.textContent = `$${newDailyEarnings.toFixed(2)}`;
+
+            updateChart(currentDailyEarnings, newDailyEarnings);
+        }
+
+        // Function to create or update the chart
+        function updateChart(current, updated) {
+            const ctx = document.getElementById('earnings-chart').getContext('2d');
+            const chartData = {
+                labels: ['Current Earnings', 'With Muddskip'],
+                datasets: [{
+                    label: 'Daily Earnings',
+                    data: [current, updated],
+                    backgroundColor: [
+                        'rgba(59, 130, 246, 0.6)', // blue-500 with opacity
+                        'rgba(34, 197, 94, 0.6)' // green-500 with opacity
+                    ],
+                    borderColor: [
+                        'rgba(59, 130, 246, 1)',
+                        'rgba(34, 197, 94, 1)'
+                    ],
+                    borderWidth: 2
+                }]
+            };
+
+            const chartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: '#e5e7eb'
+                        },
+                        ticks: {
+                            callback: function(value, index, values) {
+                                return '$' + value;
+                            }
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.y);
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            };
+
+            if (myChart) {
+                myChart.data = chartData;
+                myChart.options = chartOptions;
+                myChart.update();
+            } else {
+                myChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: chartData,
+                    options: chartOptions
+                });
+            }
+        }
+        
+        // Initial calculation and chart drawing
+        window.onload = function() {
+            updateCalculator();
+
+            // Add event listeners to input fields to re-calculate on change
+            boardsInput.addEventListener('input', updateCalculator);
+            currentPayInput.addEventListener('input', updateCalculator);
+            newPayInput.addEventListener('input', updateCalculator);
+        };
+
+    </script>
+</body>
+</html>
